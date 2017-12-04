@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+        <title>MySQL Mapper</title>
+        <style>
+		
+		/* Styles the div to make it fill the page entirely */
+		  #map {
+			height: 100%;
+		  }
+		  html, body {
+			height: 100%;
+			margin: 0;
+			padding: 0;
+		  }
+		</style>
+    </head>
+    <body>
+        <script type="text/javascript" src="../../Phonegap/MySQLMapTest/www/cordova.js"></script>
+        
+        <!-- Creates the area for the map -->
+        <div id="map" height="460px" width="100%"></div>
+        
+        <!-- Creates a table with rows and -->
+    <div id="form">
+      <table>
+      <tr><td>Name:</td> <td><input type="text" id="name"/> </td> </tr>
+      <tr><td>Address:</td> <td><input type="text" id="address"/> </td> </tr>
+      <tr><td>Type:</td> <td><select id="type"> +
+                 <option value="fooddrive" SELECTED>Food Drive</option>
+                 <option value="cancerwalk">Cancer Walk</option>
+                 </select> </td></tr>
+                 <tr><td></td><td><input type="button" value="Save" onclick="saveData()"/></td></tr>
+      </table>
+    </div>
+    
+    <!-- Displays text upon saving the inputted data -->
+    <div id="message">Location saved</div>
+    <script>
+	
+	  <!-- Defines map variables -->
+      var map;
+      var marker;
+      var infowindow;
+      var messagewindow;
+
+	  <!-- Initiates the map with Javascript -->
+      function initMap() {
+		  
+		<!-- Constructs a Google Maps object with your desired location -->
+        var california = {lat: 37.4419, lng: -122.1419};
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: california,
+          zoom: 13
+        });
+		
+		<!-- Creates objects for the markers info windows -->
+        infowindow = new google.maps.InfoWindow({
+          content: document.getElementById('form')
+        });
+
+        messagewindow = new google.maps.InfoWindow({
+          content: document.getElementById('message')
+        });
+		
+		<!-- Define the click listeners to select the markers -->
+        google.maps.event.addListener(map, 'click', function(event) {
+          marker = new google.maps.Marker({
+            position: event.latLng,
+            map: map
+          });
+
+
+          google.maps.event.addListener(marker, 'click', function() {
+            infowindow.open(map, marker);
+          });
+        });
+      }
+	   
+	  <!-- Saves data into MySQL database using an XMLHTTPRequest object -->
+      function saveData() {
+        var name = escape(document.getElementById('name').value);
+        var address = escape(document.getElementById('address').value);
+        var type = document.getElementById('type').value;
+        var latlng = marker.getPosition();
+        var url = 'http://10.0.1.224/MySQLMapData.php?name=' + name + '&address=' + address +
+                  '&type=' + type + '&lat=' + latlng.lat() + '&lng=' + latlng.lng();
+		
+        downloadUrl(url, function(data, responseCode) {
+			
+		  <!-- Checks that the XMLHTTPRequest object has retrieved the file -->
+          if (responseCode == 200 && data.length <= 1) {
+            infowindow.close();
+            messagewindow.open(map, marker);
+          }
+        });
+      }
+
+	  <!-- Provides the URL content and status code -->
+      function downloadUrl(url, callback) {
+        var request = window.ActiveXObject ?
+            new ActiveXObject('Microsoft.XMLHTTP') :
+            new XMLHttpRequest;
+
+        request.onreadystatechange = function() {
+          if (request.readyState == 4) {
+            request.onreadystatechange = doNothing;
+            callback(request.responseText, request.status);
+          }
+        };
+		
+        request.open('GET', url, true);
+        request.send(null);
+		infowindow.close();
+      }
+
+      function doNothing () {
+      }
+
+    </script>
+    
+    <!-- Imports the map using your API key -->
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB9qV0EP-CKk2-ca-ejKfEDtt0xDonrSLk&callback=initMap">
+    </script>
+    </body>
+</html>
